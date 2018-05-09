@@ -1,0 +1,55 @@
+import javax.swing.table.AbstractTableModel;
+
+public class Table extends AbstractTableModel {
+	private static final long serialVersionUID = 1L;
+	private String[] colName = {"ID","Nombre","País","Stock"};
+	private Object[][] data = {
+		{"1","que","Spain","Hola"},
+		{"2","que","France",""},
+		{"3","que","Spain",""},
+		{"4","que","Italy",""},
+		{"5","que","Spain",""},
+		{"6","que","Germany",""},
+		{"7","que","Spain",""},
+		{"8","que","France",""},
+		{"9","que","Spain",""}
+	};
+	
+	public boolean isCellEditable(int row, int col) {
+		if (col < 3) {
+        	return false;
+    	}else{
+        	return true;
+        }
+    }
+    
+	public void setValueAt(Object value, int row, int col) {
+		data[row][col] = value;
+    }
+    
+	public String getColumnName(int col){
+		return colName[col];
+	}
+    
+    @Override
+    public Object getValueAt(int row, int col) {
+    	if(col<3){
+    		return data[row][col];
+    	}else{
+    		return data[row][col];
+    	}
+      }
+	@Override
+	public int getColumnCount() {
+		return colName.length;
+	}
+
+	@Override
+	public int getRowCount() {
+		return data.length;
+	}
+    public Class getColumnClass(int col) {
+        return getValueAt(0, col).getClass();
+    }
+	
+}
