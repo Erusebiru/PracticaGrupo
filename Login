@@ -1,0 +1,103 @@
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import javax.swing.JOptionPane;
+
+import com.mysql.jdbc.Statement;
+
+public class Login {
+	
+	private static Connection Conexion;
+	public Login(){
+		
+	}
+	
+	//CREAMOS LA CONEXIÓN CON LA BASE DE DATOS
+	public void MySQLConnection(String user, String pass, String db_name) throws Exception {
+	    try {
+	        Class.forName("com.mysql.jdbc.Driver");
+	        Conexion = DriverManager.getConnection("jdbc:mysql://localhost:3306/" + db_name, user, pass);
+	       // JOptionPane.showMessageDialog(null, "Se ha iniciado la conexión con el servidor de forma exitosa");
+	    } catch (ClassNotFoundException ex) {
+	        Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+	    } catch (SQLException ex) {
+	        Logger.getLogger(Login.class.getName()).log(Level.SEVERE, null, ex);
+	    }
+	}
+	
+	//INSERTAMOS VALORES EN LA BASE DE DATOS
+	 public void insertData(String table_name, String nombre, String email, String pass) {
+        try {
+            String Query = "INSERT INTO " + table_name + " (nombre,email,pass) VALUES("
+                    + "\"" + nombre + "\", "
+            		+ "\"" + email + "\", "
+                    + "\"" + pass + "\")";
+            Statement st = (Statement) Conexion.createStatement();
+            st.executeUpdate(Query);
+            JOptionPane.showMessageDialog(null, "Datos almacenados de forma exitosa");
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Error en el almacenamiento de datos");
+        }
+    }
+	 
+	 //MOSTRAMOS LOS VALORES DE LA BASE DE DATOS
+	 public void getValues(String table_name) {
+        try {
+        	String Query = "SELECT * FROM " + table_name;
+            Statement st = (Statement) Conexion.createStatement();
+            java.sql.ResultSet resultSet;
+            resultSet = st.executeQuery(Query);
+ 
+            while (resultSet.next()) {
+                System.out.println("ID: " + resultSet.getString("clientID") + " "
+                		+ "Nombre: " + resultSet.getString("nombre") + " "
+                		+ "E-Mail: " + resultSet.getString("email"));
+            }
+ 
+        } catch (SQLException ex) {
+            JOptionPane.showMessageDialog(null, "Error en la adquisición de datos");
+        }
+    }
+	 
+	//MÉTODO PARA BORRAR REGSITROS
+	 
+	 public void deleteRecord(String table_name, String ID) {
+        try {
+            String Query = "DELETE FROM " + table_name + " WHERE ID = \"" + ID + "\"";
+            Statement st = (Statement) Conexion.createStatement();
+            st.executeUpdate(Query);
+
+        } catch (SQLException ex) {
+            System.out.println(ex.getMessage());
+            JOptionPane.showMessageDialog(null, "Error borrando el registro especificado");
+        }
+    }
+	 
+	 public ArrayList showCountries(String table_name){
+		 ArrayList<String> array = new ArrayList<String>();
+		 try{
+			 String Query = "SELECT nombre FROM " + table_name;
+			 Statement st = (Statement) Conexion.createStatement();
+			 java.sql.ResultSet resultSet;
+			 resultSet = st.executeQuery(Query);
+			 while (resultSet.next()) {
+				 array.add(resultSet.getString("nombre"));
+			 }
+		 }catch(SQLException ex){
+			 JOptionPane.showMessageDialog(null, "No existen países en la tabla");
+		 }
+		 return array;
+	 }
+	
+	public static void main(String[] args) throws Exception {
+		Login log = new Login();
+		log.MySQLConnection("root", "", "comandas");
+		log.insertData("clientes", "Jose", "jcalata@xcat.cat", "123456");
+
+	}
+	
+}
