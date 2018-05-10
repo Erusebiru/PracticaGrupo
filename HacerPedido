@@ -19,6 +19,8 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.RowFilter;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableModel;
 import javax.swing.table.TableRowSorter;
 
 public class Principal extends JFrame{
@@ -28,12 +30,13 @@ public class Principal extends JFrame{
 	JPanel panel,panel2,panelgeneral,pedido;
 	JLabel label,label2;
 	JButton aceptar,borrar, button2;
-	TableRowSorter<Table> sorter;
+	TableRowSorter<DefaultTableModel> sorter;
 	JTable table;
 	JScrollPane spane;
 	JCheckBox cbox;
 	JComboBox<String> comboCountries;
 	Login log;
+	
 	public Principal() throws Exception{
 		log = new Login();
 		log.MySQLConnection("root", "", "comandas");
@@ -50,13 +53,31 @@ public class Principal extends JFrame{
 		/* CREAMOS LA TABLA 
 		 * Y EL MÉTODO PARA FILTRAR
 		 */
-		Table model = new Table();
-		sorter = new TableRowSorter<Table>(model);
-		table = new JTable(model);
+		ArrayList<Productos>products = log.showProducts("productos");
+		String[] col = {"Codigo","Nombre","País","Stock","Precio","Cantidad"};
+		DefaultTableModel tablemodel = new DefaultTableModel(col,0){
+			
+			//MÉTODO QUE HACE LAS CELDAS CON VALOR FALSE NO EDITABLES
+			@Override
+		    public boolean isCellEditable(int row, int col) {
+				if (col < 5) {
+		        	return false;
+		    	}else{
+		        	return true;
+		        }
+		    }
+		};
+		for(int i=0;i<products.size();i++){
+			Object[] data = {products.get(i).getNombre(),products.get(i).getCodigo(),products.get(i).getPais(),products.get(i).getStock(),products.get(i).getPrecio(),0};
+			tablemodel.addRow(data);
+		}
+		table = new JTable(tablemodel);
+		sorter = new TableRowSorter<DefaultTableModel>(tablemodel);
+		
 		table.setRowSorter(sorter);
 		//DEFINIMOS EL TAMAÑO DE LA TABLA
 		table.setPreferredScrollableViewportSize(new Dimension(500, 144));
-		
+
 		/*
 		 * CREAMOS EL PANEL IZQUIERDO
 		 */
@@ -68,7 +89,6 @@ public class Principal extends JFrame{
 		 */
 		cbox = new JCheckBox();
 		
-
 		/*
 		 * CREAMOS LA LABEL Y LA AÑADIMOS AL PANEL IZQUIERDO
 		 */
@@ -89,7 +109,6 @@ public class Principal extends JFrame{
 			countries2[j] = i;
 			j++;
 		}
-		//String[] countries2 = (String []) countries;
 		comboCountries = new JComboBox<String>(countries2);
 		comboCountries.addActionListener(new ActionListener() {
 			@Override
@@ -113,7 +132,6 @@ public class Principal extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				cardLayout.show(panelgeneral, "panel2");
-				
 			}
 		});
 		constraints.gridx = 0;
@@ -150,12 +168,12 @@ public class Principal extends JFrame{
 		pedido.setBorder(BorderFactory.createTitledBorder("Usuario"));
 
 	}
-	
+
 	/* CREAMOS EL FILTRO PARA LA TABLA
 	 * FILTRARÁ A TRAVÉS DEL COMBOBOX POR PAÍSES
 	 */
 	private void newFilter() {
-		RowFilter<Table, Object> rf = null;
+		RowFilter rf = null;
 	    try {
 	      rf = RowFilter.regexFilter((String)comboCountries.getSelectedItem(),2);
 	    } catch (java.util.regex.PatternSyntaxException e) {
@@ -180,7 +198,6 @@ public class Principal extends JFrame{
 			@Override
 			public void actionPerformed(ActionEvent e) {
 				cardLayout.show(panelgeneral, "panel");
-				
 			}
 		});
 		panel2.add(label2);
@@ -191,13 +208,14 @@ public class Principal extends JFrame{
 	public void panelGeneral(){
 		panelgeneral = new JPanel();
 		panelgeneral.setLayout(cardLayout);
-		
-		panelgeneral.add(pedido,"panel");
 		panelgeneral.add(panel2,"panel2");
+		panelgeneral.add(pedido,"panel");
+		
 		this.add(panelgeneral);
 	}
 	
 	public void windowConstructor(){
+			
 		this.setSize(750,270);	
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		this.setVisible(true);
