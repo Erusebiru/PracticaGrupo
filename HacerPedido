@@ -7,6 +7,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.sql.SQLException;
 import java.util.ArrayList;
 
 import javax.swing.BorderFactory;
@@ -15,9 +16,12 @@ import javax.swing.JCheckBox;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
+import javax.swing.JPasswordField;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+import javax.swing.JTextField;
 import javax.swing.RowFilter;
 import javax.swing.table.DefaultTableModel;
 import javax.swing.table.TableModel;
@@ -27,19 +31,25 @@ public class Principal extends JFrame{
 	
 	private static final long serialVersionUID = 1L;
 	CardLayout cardLayout = new CardLayout();
-	JPanel panel,panel2,panelgeneral,pedido;
-	JLabel label,label2;
-	JButton aceptar,borrar, button2;
+	JPanel panel,panel2,panelgeneral,pedido,loginpanel;
+	JLabel label,label2,usertext,passtext;
+	JButton aceptar,borrar, button2,aceptarlogin;
 	TableRowSorter<DefaultTableModel> sorter;
 	JTable table;
 	JScrollPane spane;
 	JCheckBox cbox;
 	JComboBox<String> comboCountries;
 	Login log;
+	JTextField user;
+	JPasswordField pass;
+	GridBagLayout bag;
+	GridBagConstraints constraints;
 	
 	public Principal() throws Exception{
+
 		log = new Login();
 		log.MySQLConnection("root", "", "comandas");
+		loginWindow();
 		panelSuperior();
 		panelInferior();
 		panelGeneral();
@@ -47,9 +57,9 @@ public class Principal extends JFrame{
 	}
 	
 	public void panelSuperior(){
-		GridBagLayout bag = new GridBagLayout();
-		GridBagConstraints constraints = new GridBagConstraints();
-		
+
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
 		/* CREAMOS LA TABLA 
 		 * Y EL MÉTODO PARA FILTRAR
 		 */
@@ -204,10 +214,64 @@ public class Principal extends JFrame{
 		panel2.add(button2);
 	}
 	
+	public void loginWindow(){
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
+		loginpanel = new JPanel();
+		
+		loginpanel.setLayout(bag);
+		constraints.insets = new Insets(20, 20, 20, 20);
+		
+		usertext = new JLabel("Usuario: ");
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		loginpanel.add(usertext,constraints);
+		
+		user = new JTextField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		loginpanel.add(user,constraints);
+		constraints.insets = new Insets(0, 20, 20, 20);
+		passtext = new JLabel("Password: ");
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		loginpanel.add(passtext,constraints);
+		
+		pass = new JPasswordField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 1;
+		loginpanel.add(pass,constraints);
+		
+		aceptarlogin = new JButton("Login");
+		aceptarlogin.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					if(log.logIn("clientes", user.getText(), pass.getText())){
+						cardLayout.show(panelgeneral, "panel2");
+					}else{
+						JOptionPane.showMessageDialog(null, "Usuario o password introducido no existe");
+					}
+				} catch (SQLException e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+			}
+		});
+		constraints.gridx = 0;
+		constraints.gridy = 2;
+		constraints.gridwidth = 2;
+		loginpanel.add(aceptarlogin, constraints);
+		
+		this.add(loginpanel);
+	}
+	
 	//PANEL QUE ENGLOBA TODOS LOS ELEMENTOS DE LA VENTANA
 	public void panelGeneral(){
 		panelgeneral = new JPanel();
 		panelgeneral.setLayout(cardLayout);
+		panelgeneral.add(loginpanel, "loginpanel");
 		panelgeneral.add(panel2,"panel2");
 		panelgeneral.add(pedido,"panel");
 		
