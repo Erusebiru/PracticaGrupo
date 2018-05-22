@@ -1,5 +1,6 @@
 import java.sql.Connection;
 import java.sql.DriverManager;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -7,11 +8,14 @@ import java.util.logging.Logger;
 
 import javax.swing.JOptionPane;
 
-import com.mysql.jdbc.Statement;
+import java.sql.Statement;
 
 public class Login {
 	
 	private static Connection Conexion;
+	ResultSet resultSet;
+	Cliente client;
+	
 	public Login(){
 		
 	}
@@ -36,31 +40,30 @@ public class Login {
                     + "\"" + nombre + "\", "
             		+ "\"" + email + "\", "
                     + "\"" + pass + "\")";
-            Statement st = (Statement) Conexion.createStatement();
+            Statement st = Conexion.createStatement();
             st.executeUpdate(Query);
-            JOptionPane.showMessageDialog(null, "Datos almacenados de forma exitosa");
+            //JOptionPane.showMessageDialog(null, "Datos almacenados de forma exitosa");
         } catch (SQLException ex) {
-            JOptionPane.showMessageDialog(null, "Error en el almacenamiento de datos");
+            //JOptionPane.showMessageDialog(null, "Error en el almacenamiento de datos");
         }
     }
 	 
 	 //MOSTRAMOS LOS VALORES DE LA BASE DE DATOS
-	 public void getValues(String table_name) {
+	 public Cliente getValues(String table_name) {
         try {
         	String Query = "SELECT * FROM " + table_name;
-            Statement st = (Statement) Conexion.createStatement();
-            java.sql.ResultSet resultSet;
-            resultSet = st.executeQuery(Query);
- 
+        	
+			Statement st = Conexion.createStatement();
+			resultSet = st.executeQuery(Query);
+            
             while (resultSet.next()) {
-                System.out.println("ID: " + resultSet.getString("clientID") + " "
-                		+ "Nombre: " + resultSet.getString("nombre") + " "
-                		+ "E-Mail: " + resultSet.getString("email"));
+                client = new Cliente(resultSet.getString("nombre"),resultSet.getString("email"),resultSet.getString("direccion"),resultSet.getString("tarjeta"));
             }
  
         } catch (SQLException ex) {
             JOptionPane.showMessageDialog(null, "Error en la adquisición de datos");
         }
+		return client;
     }
 	 
 	//MÉTODO PARA BORRAR REGSITROS
@@ -68,36 +71,68 @@ public class Login {
 	 public void deleteRecord(String table_name, String ID) {
         try {
             String Query = "DELETE FROM " + table_name + " WHERE ID = \"" + ID + "\"";
-            Statement st = (Statement) Conexion.createStatement();
+            Statement st = Conexion.createStatement();
             st.executeUpdate(Query);
 
         } catch (SQLException ex) {
             System.out.println(ex.getMessage());
-            JOptionPane.showMessageDialog(null, "Error borrando el registro especificado");
+            //JOptionPane.showMessageDialog(null, "Error borrando el registro especificado");
         }
     }
 	 
-	 public ArrayList showCountries(String table_name){
-		 ArrayList<String> array = new ArrayList<String>();
+	 public ArrayList<String> showCountries(String table_name){
+		 ArrayList<String> arrayCountries = new ArrayList<String>();
 		 try{
-			 String Query = "SELECT nombre FROM " + table_name;
-			 Statement st = (Statement) Conexion.createStatement();
-			 java.sql.ResultSet resultSet;
+			 String Query = "SELECT * FROM " + table_name;
+			 Statement st = Conexion.createStatement();
 			 resultSet = st.executeQuery(Query);
-			 while (resultSet.next()) {
-				 array.add(resultSet.getString("nombre"));
+			 while(resultSet.next()){
+				 arrayCountries.add(resultSet.getString("nombre"));
 			 }
 		 }catch(SQLException ex){
-			 JOptionPane.showMessageDialog(null, "No existen países en la tabla");
+			 //JOptionPane.showMessageDialog(null, "No existen países en la tabla");
 		 }
-		 return array;
+		 return arrayCountries;
+	 }
+	 
+	 public ArrayList<Productos> showProducts(String table_name){
+		 
+		 ArrayList<Productos> arrayProducts = new ArrayList<Productos>();
+		 try{
+			 String Query = "SELECT paises.nombre, productos.nombre, productos.id_producto, productos.codigo, productos.stock, productos.precio FROM paises, productos WHERE productos.id_pais = paises.id_pais";
+			 Statement st = Conexion.createStatement();
+			 resultSet = st.executeQuery(Query);
+			 while(resultSet.next()){
+				 arrayProducts.add(new Productos(resultSet.getString("productos.nombre"),resultSet.getInt("id_producto"),resultSet.getInt("codigo"),resultSet.getString("paises.nombre"),resultSet.getInt("stock"),resultSet.getFloat("precio")));
+			 }
+		 }catch(SQLException ex){
+			 //JOptionPane.showMessageDialog(null, "No existen productos en la tabla");
+		 }
+		 return arrayProducts;
+	 }
+	 
+	 public boolean logIn(String table_name, String user, String pass){
+		 try{
+			 String Query = "SELECT nombre FROM " + table_name + " WHERE nombre = '" + user + "' and pass = " + pass;
+			 Statement st = Conexion.createStatement();
+			 resultSet = st.executeQuery(Query);
+			 boolean resultado = resultSet.next();
+			 if(resultado == false){
+				 return false;
+			 }else{
+				 return true;
+			 }
+		 }catch(SQLException ex){
+			 //JOptionPane.showMessageDialog(null, "No hay usuario");
+		 }
+		return false;
 	 }
 	
 	public static void main(String[] args) throws Exception {
 		Login log = new Login();
 		log.MySQLConnection("root", "", "comandas");
 		log.insertData("clientes", "Jose", "jcalata@xcat.cat", "123456");
-
 	}
 	
 }
+
