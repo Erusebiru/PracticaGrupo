@@ -1,0 +1,342 @@
+import java.awt.CardLayout;
+import java.awt.Dimension;
+import java.awt.Font;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.ArrayList;
+import java.util.regex.PatternSyntaxException;
+
+import javax.swing.BorderFactory;
+import javax.swing.BoxLayout;
+import javax.swing.ButtonGroup;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import javax.swing.RowFilter;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableRowSorter;
+
+public class Pedidos extends JFrame{
+	
+	private static final long serialVersionUID = 1L;
+	CardLayout cardLayout = new CardLayout();
+	JPanel panel,panel2,panelgeneral,pedido;
+	JLabel label,metodo,nombre,direccion,totalText, textTotal;
+	JButton add,aceptar,borrar,aceptarlogin,button,finalizarpedido;
+	TableRowSorter<DefaultTableModel> sorter;
+	JTable table,table2;
+	JScrollPane spane,spane2;
+	JComboBox<String> comboCountries;
+	Login log;
+	GridBagLayout bag;
+	GridBagConstraints constraints;
+	RowFilter rf;
+	int stock;
+	float num;
+	String tot = "Total pedido: "+num+" euros.";
+	DefaultTableModel tablemodel,tablemodel2;
+	ButtonGroup bg;
+	Cliente client;
+	ArrayList datosPedido = new ArrayList();
+	
+	public Pedidos(Cliente client, Login log) throws Exception{
+		this.client = client;
+		this.log = log;
+		panelSuperior();
+		panelInferior();
+		panelGeneral();
+		windowConstructor();
+	}
+	
+	public void panelSuperior(){
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
+		
+		/* CREAMOS LA TABLA 
+		 * Y EL MÉTODO PARA FILTRAR
+		 */
+		ArrayList<Productos>products = log.showProducts("productos");
+		String[] col = {"Codigo","Nombre","País","Stock","Precio","Cantidad"};
+		tablemodel = new DefaultTableModel(col,0){
+			private static final long serialVersionUID = 1L;
+
+			//MÉTODO QUE HACE LAS CELDAS CON VALOR FALSE NO EDITABLES
+			@Override
+		    public boolean isCellEditable(int row, int col) {
+				if (col < 5) {
+		        	return false;
+		    	}else{
+		        	return true;
+		        }
+		    }
+		};
+		
+		//CREAMOS LA TABLA
+				table = new JTable(tablemodel);
+				sorter = new TableRowSorter<DefaultTableModel>(tablemodel);
+				table.setRowSorter(sorter);
+				//DEFINIMOS EL TAMAÑO DE LA TABLA
+				table.setPreferredScrollableViewportSize(new Dimension(550, 160));
+		
+		//INSERTAMOS LOS VALORES EN LA TABLA
+		for(int i=0;i<products.size();i++){
+			//Object[] data = {products.get(i).getCodigo(),products.get(i).getNombre(),products.get(i).getPais(),products.get(i).getStock(),products.get(i).getPrecio(),"0","Añadir"};
+			Object[] data = {products.get(i).getCodigo(),products.get(i).getNombre(),products.get(i).getPais(),products.get(i).getStock(),products.get(i).getPrecio(),"0"};
+			tablemodel.addRow(data);
+		}
+
+		/*
+		 * CREAMOS EL PANEL IZQUIERDO
+		 */
+		panel = new JPanel();
+		panel.setLayout(bag);
+		
+		/*
+		 * CREAMOS LA LABEL Y LA AÑADIMOS AL PANEL IZQUIERDO
+		 */
+		label = new JLabel("Escoger país");
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		constraints.insets = new Insets(5,20,0,20);
+		panel.add(label,constraints);
+		
+		/* CREAMOS EL COMBO BOX
+		 * CREAMOS UN VECTOR CON LOS PAÍSES QUE APARECERÁN EN EL COMBOBOX
+		 */
+		ArrayList<String> countries = log.showCountries("paises");
+		int j = 1;
+		String[] countries2=new String[countries.size()+1];
+		countries2[0] = "Todos";
+		for(String i: countries){
+			countries2[j] = i;
+			j++;
+		}
+		comboCountries = new JComboBox<String>(countries2);
+		comboCountries.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if((String)comboCountries.getSelectedItem() != "Todos"){
+					newFilter();
+				}else{
+					removeFilter();
+				}
+			}
+		});
+		
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		panel.add(comboCountries,constraints);
+		
+		//CREAMOS EL BOTÓN DE ACEPTAR Y LO AÑADIMOS AL PANEL IZQUIERDO
+		add = new JButton("Añadir");
+		add.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try{
+		        	int codigo = (int) table.getModel().getValueAt(table.getSelectedRow(), 0);
+		        	String nombre = (String) table.getModel().getValueAt(table.getSelectedRow(), 1);
+		        	String pais = (String) table.getModel().getValueAt(table.getSelectedRow(), 2);
+		        	stock = (int) table.getModel().getValueAt(table.getSelectedRow(), 3);
+		        	float precio = (float) table.getModel().getValueAt(table.getSelectedRow(), 4);
+		        	int cantidad = Integer.valueOf((String) table.getModel().getValueAt(table.getSelectedRow(), 5));
+		        	float total = precio*cantidad;
+		        	
+		        	if(cantidad > 0){
+			        	if(stock-cantidad >= 0){
+			        		num += total;
+			        		tot = "Total pedido: "+num+" euros.";
+			        		totalText.setText(tot);
+			        		//Object[] orderRow = {
+				        	tablemodel.setValueAt(stock-cantidad, table.getSelectedRow(), 3);
+				    		Object[] rowData = {codigo,nombre,pais,precio,cantidad,total};
+				    		tablemodel2.addRow(rowData);
+			        	}else{
+			        		JOptionPane.showMessageDialog(getContentPane(), "No puedes superar el stock");
+			        	}
+		        	}else{
+		        		JOptionPane.showMessageDialog(getContentPane(), "No has puesto ninguna cantidad");
+		        	}
+
+				}catch(ArrayIndexOutOfBoundsException a){
+					JOptionPane.showMessageDialog(getContentPane(), "No has seleccionado ningún producto");
+				}catch(NumberFormatException n){
+					
+				}
+			}
+		});
+		constraints.gridx = 0;
+		constraints.gridy = 2;
+		constraints.ipadx = 38;
+		constraints.insets = new Insets(25,20,10,20);
+		panel.add(add, constraints);
+		
+		//CREAMOS EL BOTÓN DE BORRAR Y LO AÑADIMOS AL PANEL IZQUIERDO
+		borrar = new JButton("Borrar");
+		borrar.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try{
+					int i = 0;
+					while ((int) table2.getModel().getValueAt(table2.getSelectedRow(), 0) != products.get(i).getCodigo()){
+						i++;
+					}
+					tablemodel.setValueAt((int) table.getModel().getValueAt(i, 3)+(int) table2.getModel().getValueAt(table2.getSelectedRow(), 4), i, 3);
+					num-=(float) table2.getModel().getValueAt(table2.getSelectedRow(), 5);
+					totalText.setText("Total pedido: "+num+" euros.");
+					tablemodel2.removeRow(table2.getSelectedRow());
+				}catch(ArrayIndexOutOfBoundsException a){
+					JOptionPane.showMessageDialog(getContentPane(), "No has seleccionado ningún producto");
+				}
+			}
+		});
+		
+		constraints.gridx = 0;
+		constraints.gridy = 3;
+		
+		constraints.insets = new Insets(0,20,10,20);
+		panel.add(borrar, constraints);
+		
+		aceptar = new JButton("Hacer Pedido");
+		aceptar.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent arg0) {
+				for(int e=0;e<table2.getRowCount();e++){
+					Object[] rowData = new Object[table2.getColumnCount()];
+					for (int i = 0; i < table2.getColumnCount(); i++) {
+							rowData[i] = table2.getValueAt(e, i);
+					}
+					datosPedido.add(rowData);
+				}
+
+				Confirmacion conf = new Confirmacion(client, log, num, datosPedido);
+				Pedidos.this.dispose();
+			}
+		});
+		constraints.gridx = 0;
+		constraints.gridy = 4;
+		constraints.ipadx = 0;
+		panel.add(aceptar,constraints);
+		//CREAMOS UN NUEVO PANEL PARA TODA LA VENTANA
+		pedido = new JPanel();
+		pedido.setLayout(bag);
+		
+		//AÑADIMOS EL PANEL IZQUIERDO AL PANEL DE VENTANA
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		constraints.ipadx = 0;
+		constraints.insets = new Insets(25,20,0,20);
+		pedido.add(panel,constraints);
+		
+		//AÑADIMOS LA TABLA (A TRAVÉS DEL SCROLL PANEL) EN EL PANEL DE LA VENTANA
+		spane = new JScrollPane(table);
+		constraints.insets = new Insets(15,15,15,15);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		constraints.gridheight = 2;
+		pedido.add(spane,constraints);
+		pedido.setBorder(BorderFactory.createTitledBorder(this.client.getNombre()));
+	}
+
+	/* CREAMOS EL FILTRO PARA LA TABLA
+	 * FILTRARÁ A TRAVÉS DEL COMBOBOX POR PAÍSES
+	 */
+	private void newFilter() {
+	    try {
+	      rf = RowFilter.regexFilter((String)comboCountries.getSelectedItem(),2);
+	    } catch (PatternSyntaxException e) {
+	      return;
+	    }
+	    sorter.setRowFilter(rf);
+	}
+	
+	//MÉTODO QUE ELIMINA EL FILTRO PARA VOLVER A VER PRODUCTOS DE TODOS LOS PAÍSES
+
+	private void removeFilter() {
+	    sorter.setRowFilter(null);
+	}
+	
+	public void panelInferior(){
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
+		constraints.insets = new Insets(0,5,5,5);
+		
+		panel2 = new JPanel();
+		panel2.setBorder(BorderFactory.createTitledBorder("Pedido"));
+		panel2.setLayout(bag);
+		
+		totalText = new JLabel(tot);
+		totalText.setFont(new Font(totalText.getFont().getName(), Font.PLAIN, 18));
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		constraints.anchor = GridBagConstraints.LINE_END;
+		panel2.add(totalText,constraints);
+		
+		String[] col = {"Codigo","Nombre","País","Precio","Cantidad","Total"};
+		tablemodel2 = new DefaultTableModel(col,0){
+			private static final long serialVersionUID = 1L;
+
+			//MÉTODO QUE HACE LAS CELDAS CON VALOR FALSE NO EDITABLES
+			@Override
+		    public boolean isCellEditable(int row, int col) {
+				if (col < 5) {
+		        	return false;
+		    	}else{
+		        	return true;
+		        }
+		    }
+		};
+		
+		//CREAMOS LA TABLA
+		table2 = new JTable(tablemodel2);
+		
+		//DEFINIMOS EL TAMAÑO DE LA TABLA
+		table2.setPreferredScrollableViewportSize(new Dimension(725, 150));
+		
+		//CREAMOS EL SCROLL PANEL Y AÑADIMOS LA TABLA
+		spane2 = new JScrollPane(table2);
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		panel2.add(spane2,constraints);
+	}
+	
+	public void addData(ArrayList datosPedido,float num) {
+		this.datosPedido = datosPedido;
+		for(int i=0;i<datosPedido.size();i++){
+			Object[] data = {((Object[])datosPedido.get(i))[0],((Object[])datosPedido.get(i))[1],((Object[])datosPedido.get(i))[2],((Object[])datosPedido.get(i))[3],((Object[])datosPedido.get(i))[4],((Object[])datosPedido.get(i))[5]};
+			tablemodel2.addRow(data);
+			totalText.setText("Total pedido: "+num+" euros.");
+		}
+	}
+	
+	//PANEL QUE ENGLOBA TODOS LOS ELEMENTOS DE LA VENTANA
+	public void panelGeneral(){
+		panelgeneral = new JPanel();
+		JPanel panelunido = new JPanel();
+		panelunido.setLayout(new BoxLayout(panelunido, BoxLayout.Y_AXIS));
+		panelunido.add(pedido);
+		panelunido.add(panel2);
+		panelgeneral.setLayout(cardLayout);
+		panelgeneral.add(panelunido,"panel");
+		this.add(panelgeneral);
+	}
+	
+	public void windowConstructor(){
+		this.pack();
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		this.setTitle("Pedidos v1.41");
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation(dim.width/2-this.getSize().width/2,dim.height/2-this.getSize().height/2);
+		this.setResizable(false);
+		this.setVisible(true);
+	}
+}
