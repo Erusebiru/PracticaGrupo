@@ -1,0 +1,110 @@
+
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JOptionPane;
+import javax.swing.JPanel;
+import javax.swing.JPasswordField;
+import javax.swing.JTextField;
+
+public class LoginWindow extends JFrame{
+
+	private static final long serialVersionUID = 1L;
+	JPanel loginpanel;
+	JLabel usertext,passtext;
+	JButton aceptarlogin;
+	Login log;
+	JTextField user;
+	JPasswordField pass;
+	GridBagLayout bag;
+	GridBagConstraints constraints;
+	String usuario;
+	boolean control;
+	Cliente client;
+	
+	public LoginWindow() throws Exception{
+		log = new Login();
+		log.MySQLConnection("root", "", "comandas");
+		loginWindow();
+	}
+	
+	public void loginWindow(){
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
+		
+		loginpanel = new JPanel();
+		
+		loginpanel.setLayout(bag);
+		constraints.insets = new Insets(20, 20, 20, 20);
+		
+		usertext = new JLabel("Usuario: ");
+		constraints.gridx = 0;
+		constraints.gridy = 0;
+		loginpanel.add(usertext,constraints);
+		
+		user = new JTextField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		loginpanel.add(user,constraints);
+		constraints.insets = new Insets(0, 20, 20, 20);
+		passtext = new JLabel("Password: ");
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		loginpanel.add(passtext,constraints);
+		
+		pass = new JPasswordField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 1;
+		loginpanel.add(pass,constraints);
+		
+		aceptarlogin = new JButton("Login");
+		aceptarlogin.addActionListener(new ActionListener() {
+			@SuppressWarnings("deprecation")
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				if(log.logIn("clientes", user.getText(), pass.getText())){
+					usuario = Character.toUpperCase(user.getText().charAt(0)) + user.getText().substring(1,user.getText().length()).toLowerCase();
+					try {
+						client = log.getValues("clientes");
+						Pedidos pedidos = new Pedidos(client,log);
+					} catch (Exception e1) {
+						e1.printStackTrace();
+					}
+					LoginWindow.this.dispose();
+				}else{
+					JOptionPane.showMessageDialog(aceptarlogin, "Usuario o password introducido no existe");
+				}
+			}
+		});
+		
+		constraints.gridx = 0;
+		constraints.gridy = 2;
+		constraints.gridwidth = 2;
+		loginpanel.add(aceptarlogin, constraints);
+		this.add(loginpanel);
+		windowConstructor();
+	}
+	
+	public void windowConstructor(){
+		this.setSize(400,270);	
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation(dim.width/2-this.getSize().width/2,dim.height/2-this.getSize().height/2);
+		this.setResizable(false);
+		this.setVisible(true);
+	}
+	
+	public static void main(String[] args) throws Exception {
+		new LoginWindow();
+
+	}
+
+}
