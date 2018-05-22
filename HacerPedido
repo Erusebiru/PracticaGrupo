@@ -1,210 +1,168 @@
-package shop;
-
-import java.awt.CardLayout;
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
 import java.awt.Insets;
+import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 
-import javax.swing.BorderFactory;
+import javax.swing.ButtonGroup;
 import javax.swing.JButton;
-import javax.swing.JCheckBox;
-import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
-import javax.swing.JScrollPane;
-import javax.swing.JTable;
-import javax.swing.RowFilter;
-import javax.swing.table.TableRowSorter;
+import javax.swing.JRadioButton;
+import javax.swing.JTextField;
 
-public class Principal extends JFrame{
-	
+public class Confirmacion extends JFrame{
 	private static final long serialVersionUID = 1L;
-	CardLayout cardLayout = new CardLayout();
-	JPanel panel,panel2,panelgeneral,pedido;
-	JLabel label,label2;
-	JButton aceptar,borrar, button2;
-	TableRowSorter<Table> sorter;
-	JTable table;
-	JScrollPane spane;
-	JCheckBox cbox;
-	JComboBox<String> comboCountries;
-	Login log;
-	public Principal() throws Exception{
-		log = new Login();
-		log.MySQLConnection("root", "", "comandas");
-		panelSuperior();
-		panelInferior();
-		panelGeneral();
-		windowConstructor();
+		JPanel confirmacion;
+		GridBagLayout bag;
+		GridBagConstraints constraints;
+		ButtonGroup bg;
+		JLabel nombre,direccion,metodo,textTotal,email;
+		JTextField nombreText,direccionText,intrTarjeta,emailText;
+		Cliente client;
+		Login log;
+		JRadioButton tarjeta,paypal;
+		JButton finalizarPedido,cancelarPedido;
+		ArrayList datosPedido;
+		float num;
+		
+	public Confirmacion(Cliente client, Login log, float num, ArrayList datosPedido){
+		this.client = client;
+		this.num = num;
+		this.log = log;
+		this.datosPedido = datosPedido;
+		Confirmar();
 	}
 	
-	public void panelSuperior(){
-		GridBagLayout bag = new GridBagLayout();
-		GridBagConstraints constraints = new GridBagConstraints();
+	public void Confirmar(){
+		bag = new GridBagLayout();
+		constraints = new GridBagConstraints();
 		
-		/* CREAMOS LA TABLA 
-		 * Y EL MÉTODO PARA FILTRAR
-		 */
-		Table model = new Table();
-		sorter = new TableRowSorter<Table>(model);
-		table = new JTable(model);
-		table.setRowSorter(sorter);
-		//DEFINIMOS EL TAMAÑO DE LA TABLA
-		table.setPreferredScrollableViewportSize(new Dimension(500, 144));
+		confirmacion = new JPanel();
+		confirmacion.setLayout(bag);
+		constraints.insets = new Insets(10,10,10,10);
+		bg = new ButtonGroup();
 		
-		/*
-		 * CREAMOS EL PANEL IZQUIERDO
-		 */
-		panel = new JPanel();
-		panel.setLayout(bag);
-		
-		/*
-		 * CREAMOS EL CHECKBOX
-		 */
-		cbox = new JCheckBox();
-		
-
-		/*
-		 * CREAMOS LA LABEL Y LA AÑADIMOS AL PANEL IZQUIERDO
-		 */
-		label = new JLabel("Escoger país");
+		nombre = new JLabel("Nombre: ");
 		constraints.gridx = 0;
 		constraints.gridy = 0;
-		constraints.insets = new Insets(5,20,0,20);
-		panel.add(label,constraints);
+		constraints.anchor = GridBagConstraints.WEST;
+		confirmacion.add(nombre,constraints);
+		nombreText = new JTextField(client.getNombre(),10);
+		nombreText.setEditable(false);
+		constraints.gridx = 1;
+		constraints.gridy = 0;
+		constraints.gridwidth = 2;
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+		confirmacion.add(nombreText,constraints);
 		
-		/* CREAMOS EL COMBO BOX
-		 * CREAMOS UN VECTOR CON LOS PAÍSES QUE APARECERÁN
-		 */
-		ArrayList<String> countries = log.showCountries("paises");
-		int j = 1;
-		String[] countries2=new String[countries.size()+1];
-		countries2[0] = "Todos";
-		for(String i: countries){
-			countries2[j] = i;
-			j++;
-		}
-		//String[] countries2 = (String []) countries;
-		comboCountries = new JComboBox<String>(countries2);
-		comboCountries.addActionListener(new ActionListener() {
+		direccionText = new JTextField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 1;
+		confirmacion.add(direccionText,constraints);
+		
+		direccion = new JLabel("Dirección: ");
+		constraints.gridx = 0;
+		constraints.gridy = 1;
+		constraints.gridwidth = 1;
+		confirmacion.add(direccion,constraints);
+		
+		email = new JLabel("E-mail: ");
+		constraints.gridx = 0;
+		constraints.gridy = 2;
+		confirmacion.add(email, constraints);
+		emailText = new JTextField(client.getEmail(),15);
+		constraints.gridx = 1;
+		constraints.gridy = 2;
+		constraints.gridwidth = 2;
+		confirmacion.add(emailText, constraints);
+		
+		
+		metodo = new JLabel("Método de pago: ");
+		constraints.gridx = 0;
+		constraints.gridy = 3;
+		constraints.gridwidth = 1;
+		constraints.insets = new Insets(10,10,10,10);
+		confirmacion.add(metodo,constraints);
+		intrTarjeta = new JTextField(15);
+		constraints.gridx = 1;
+		constraints.gridy = 4;
+		intrTarjeta.setEditable(false);
+		intrTarjeta.setText(client.getTarjeta());;
+		constraints.gridwidth = 2;
+		constraints.fill = GridBagConstraints.HORIZONTAL;
+		confirmacion.add(intrTarjeta, constraints);
+		tarjeta = new JRadioButton("Tarjeta");
+		tarjeta.addItemListener(new ItemListener() {
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				if((String)comboCountries.getSelectedItem() != "Todos"){
-					newFilter();
+			public void itemStateChanged(ItemEvent a) {
+				if(a.getStateChange() == 1){
+					intrTarjeta.setEditable(true);
 				}else{
-					removeFilter();
+					intrTarjeta.setEditable(false);
 				}
 			}
 		});
-		
-		constraints.gridx = 0;
-		constraints.gridy = 1;
-		panel.add(comboCountries,constraints);
-		
-		//CREAMOS EL BOTÓN DE ACEPTAR Y LO AÑADIMOS AL PANEL IZQUIERDO
-		aceptar = new JButton("Aceptar");
-		aceptar.addActionListener(new ActionListener() {
-			
-			@Override
-			public void actionPerformed(ActionEvent e) {
-				cardLayout.show(panelgeneral, "panel2");
-				
-			}
-		});
-		constraints.gridx = 0;
-		constraints.gridy = 2;
-		constraints.insets = new Insets(30,20,10,20);
-		panel.add(aceptar, constraints);
-		
-		//CREAMOS EL BOTÓN DE BORRAR Y LO AÑADIMOS AL PANEL IZQUIERDO
-		borrar = new JButton("Borrar");
-		constraints.gridx = 0;
-		constraints.gridy = 3;
-		constraints.ipadx = 10;
-		constraints.insets = new Insets(0,20,0,20);
-		panel.add(borrar, constraints);
-		
-		//CREAMOS UN NUEVO PANEL PARA TODA LA VENTANA
-		pedido = new JPanel();
-		pedido.setLayout(bag);
-		
-		//AÑADIMOS EL PANEL IZQUIERDO AL PANEL DE VENTANA
-		constraints.gridx = 0;
-		constraints.gridy = 0;
-		constraints.ipadx = 0;
-		constraints.insets = new Insets(25,20,0,20);
-		pedido.add(panel,constraints);
-		
-		//AÑADIMOS LA TABLA (A TRAVÉS DEL SCROLL PANEL) EN EL PANEL DE LA VENTANA
-		spane = new JScrollPane(table);
-		constraints.insets = new Insets(20,20,20,20);
 		constraints.gridx = 1;
-		constraints.gridy = 0;
-		constraints.gridheight = 2;
-		pedido.add(spane,constraints);
-		pedido.setBorder(BorderFactory.createTitledBorder("Usuario"));
-
-	}
-	
-	/* CREAMOS EL FILTRO PARA LA TABLA
-	 * FILTRARÁ A TRAVÉS DEL COMBOBOX POR PAÍSES
-	 */
-	private void newFilter() {
-		RowFilter<Table, Object> rf = null;
-	    try {
-	      rf = RowFilter.regexFilter((String)comboCountries.getSelectedItem(),2);
-	    } catch (java.util.regex.PatternSyntaxException e) {
-	      return;
-	    }
-	    sorter.setRowFilter(rf);
-	}
-	
-	//MÉTODO QUE ELIMINA EL FILTRO PARA VOLVER A VER PRODUCTOS DE TODOS LOS PAÍSES
-
-	private void removeFilter() {
-	    sorter.setRowFilter(null);
-	}
-	
-	public void panelInferior(){
-		panel2 = new JPanel();
-		panel2.setBorder(BorderFactory.createTitledBorder("Panel 2"));
-		label2 = new JLabel("Este es otro panel");
-		button2 = new JButton("Cambiar 2");
-		button2.addActionListener(new ActionListener() {
-			
+		constraints.gridy = 3;
+		constraints.gridwidth = 1;
+		bg.add(tarjeta);
+		confirmacion.add(tarjeta, constraints);
+		paypal = new JRadioButton("Paypal");
+		constraints.gridx = 2;
+		constraints.gridy = 3;
+		bg.add(paypal);
+		confirmacion.add(paypal, constraints);
+		
+		textTotal = new JLabel("Total a pagar: "+this.num+" euros.");
+		constraints.gridx = 0;
+		constraints.gridy = 5;
+		constraints.gridwidth = 2;
+		confirmacion.add(textTotal,constraints);
+		
+		finalizarPedido = new JButton("Enviar");
+		constraints.gridx = 0;
+		constraints.gridy = 6;
+		constraints.gridwidth = 1;
+		constraints.ipadx = 10;
+		constraints.fill = GridBagConstraints.NONE;
+		constraints.anchor = GridBagConstraints.EAST;
+		confirmacion.add(finalizarPedido,constraints);
+		
+		cancelarPedido = new JButton("Cancelar");
+		cancelarPedido.addActionListener(new ActionListener() {
 			@Override
 			public void actionPerformed(ActionEvent e) {
-				cardLayout.show(panelgeneral, "panel");
+				try {
+					Pedidos pedido = new Pedidos(client,log);
+					pedido.addData(datosPedido,num);
+					Confirmacion.this.dispose();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
 				
 			}
 		});
-		panel2.add(label2);
-		panel2.add(button2);
-	}
-	
-	//PANEL QUE ENGLOBA TODOS LOS ELEMENTOS DE LA VENTANA
-	public void panelGeneral(){
-		panelgeneral = new JPanel();
-		panelgeneral.setLayout(cardLayout);
+		constraints.gridx = 1;
+		constraints.gridy = 6;
+		constraints.gridwidth = 1;
+		constraints.ipadx = 0;
+		constraints.anchor = GridBagConstraints.EAST;
+		confirmacion.add(cancelarPedido, constraints);
 		
-		panelgeneral.add(pedido,"panel");
-		panelgeneral.add(panel2,"panel2");
-		this.add(panelgeneral);
-	}
-	
-	public void windowConstructor(){
-		this.setSize(750,270);	
+		this.add(confirmacion);
+		this.pack();
 		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation(dim.width/2-this.getSize().width/2,dim.height/2-this.getSize().height/2);
+		this.setResizable(false);
 		this.setVisible(true);
-	}
-	
-	public static void main(String[] args) throws Exception {
-		new Principal();
-		
 	}
 }
