@@ -7,12 +7,14 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.ItemEvent;
 import java.awt.event.ItemListener;
+import java.sql.Date;
 import java.util.ArrayList;
 
 import javax.swing.ButtonGroup;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JRadioButton;
 import javax.swing.JTextField;
@@ -31,6 +33,8 @@ public class Confirmacion extends JFrame{
 		JButton finalizarPedido,cancelarPedido;
 		ArrayList datosPedido;
 		float num;
+		Date data;
+		String varMetodo;
 		
 	public Confirmacion(Cliente client, Login log, float num, ArrayList datosPedido){
 		this.client = client;
@@ -62,7 +66,7 @@ public class Confirmacion extends JFrame{
 		constraints.fill = GridBagConstraints.HORIZONTAL;
 		confirmacion.add(nombreText,constraints);
 		
-		direccionText = new JTextField(15);
+		direccionText = new JTextField(client.getDireccion(),15);
 		constraints.gridx = 1;
 		constraints.gridy = 1;
 		confirmacion.add(direccionText,constraints);
@@ -82,7 +86,6 @@ public class Confirmacion extends JFrame{
 		constraints.gridy = 2;
 		constraints.gridwidth = 2;
 		confirmacion.add(emailText, constraints);
-		
 		
 		metodo = new JLabel("Método de pago: ");
 		constraints.gridx = 0;
@@ -104,6 +107,7 @@ public class Confirmacion extends JFrame{
 			public void itemStateChanged(ItemEvent a) {
 				if(a.getStateChange() == 1){
 					intrTarjeta.setEditable(true);
+					varMetodo = tarjeta.getText();
 				}else{
 					intrTarjeta.setEditable(false);
 				}
@@ -115,6 +119,12 @@ public class Confirmacion extends JFrame{
 		bg.add(tarjeta);
 		confirmacion.add(tarjeta, constraints);
 		paypal = new JRadioButton("Paypal");
+		paypal.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				varMetodo = paypal.getText();
+			}
+		});
 		constraints.gridx = 2;
 		constraints.gridy = 3;
 		bg.add(paypal);
@@ -127,6 +137,29 @@ public class Confirmacion extends JFrame{
 		confirmacion.add(textTotal,constraints);
 		
 		finalizarPedido = new JButton("Enviar");
+		finalizarPedido.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					if(tarjeta.isSelected() == true && intrTarjeta.getText().length()>10 || paypal.isSelected() == true) {
+						log.insertOrder(client.getClientID(), varMetodo);
+						int orderNum = log.getOrders();
+						for(int i=0;i<datosPedido.size();i++) {
+							int id_producto = (int)((Object[])datosPedido.get(i))[0];
+							int cantidad = (int)((Object[])datosPedido.get(i))[4];
+							log.insertOrderLine(id_producto, orderNum, cantidad);
+							JOptionPane.showMessageDialog(null, "Pedido realizado con éxito");
+							Pedidos pedido = new Pedidos(client,log);
+						}
+					}else {
+						JOptionPane.showMessageDialog(null, "Debes escoger un método de pago");
+					}
+				}catch(Exception ex) {
+					JOptionPane.showMessageDialog(null, "Error, el pedido no se ha podido realizar");
+				}
+			}
+		});
+		
 		constraints.gridx = 0;
 		constraints.gridy = 6;
 		constraints.gridwidth = 1;
@@ -147,7 +180,6 @@ public class Confirmacion extends JFrame{
 					// TODO Auto-generated catch block
 					e1.printStackTrace();
 				}
-				
 			}
 		});
 		constraints.gridx = 1;
