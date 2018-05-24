@@ -1,0 +1,119 @@
+
+import java.awt.Dimension;
+import java.awt.GridBagConstraints;
+import java.awt.GridBagLayout;
+import java.awt.Insets;
+import java.awt.Toolkit;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+
+import javax.swing.JButton;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JPanel;
+import javax.swing.JTextField;
+
+public class Registro extends JFrame {
+	JLabel titl,name,pwd,email,direc,tarjeta;
+	JTextField name1,pwd1,email1,direc1,tarjeta1;
+	JButton conf,can;
+	public Registro() {
+		GridBagConstraints constraints = new GridBagConstraints();
+		this.setLayout(new GridBagLayout());
+		//Labels
+		titl = new JLabel("Registro");
+		constraints.gridx=0;
+		constraints.gridx=0;
+		constraints.gridwidth=2;
+		constraints.insets= new Insets(20, 0, 0, 0);
+		add(titl,constraints);
+		name = new JLabel("Usuario");
+		constraints.gridy=1;
+		constraints.gridx=0;
+		constraints.gridwidth=1;
+		constraints.anchor=GridBagConstraints.WEST;
+		constraints.insets= new Insets(15, 30, 0, 0);
+		add(name,constraints);
+		pwd = new JLabel("Password");
+		constraints.gridy=2;
+		constraints.gridx=0;
+		add(pwd,constraints);
+		email = new JLabel("Email");
+		constraints.gridy=3;
+		constraints.gridx=0;
+		add(email,constraints);
+		direc = new JLabel("Direccion");
+		constraints.gridy=4;
+		constraints.gridx=0;
+		add(direc,constraints);
+		tarjeta = new JLabel("Tarjeta");
+		constraints.gridy=5;
+		constraints.gridx=0;
+		add(tarjeta,constraints);
+		
+		
+		//Fields
+		name1 = new JTextField(20);
+		constraints.gridy=1;
+		constraints.gridx=1;
+		constraints.insets= new Insets(15, -50, 0, 30);
+		add(name1,constraints);
+		pwd1 = new JTextField(20);
+		constraints.gridy=2;
+		constraints.gridx=1;	
+		add(pwd1,constraints);
+		email1 = new JTextField(20);
+		constraints.gridy=3;
+		constraints.gridx=1;	
+		add(email1,constraints);
+		direc1 = new JTextField(20);
+		constraints.gridy=4;
+		constraints.gridx=1;	
+		add(direc1,constraints);
+		tarjeta1 = new JTextField(20);
+		constraints.gridy=5;
+		constraints.gridx=1;
+		add(tarjeta1,constraints);
+		
+		//Buttons
+		conf= new JButton("Registrar");
+		constraints.gridy=6;
+		constraints.gridx=0;
+		constraints.insets= new Insets(15, 60, 15, 0);
+		add(conf,constraints);
+		can = new JButton("Cancelar");
+		constraints.gridy=6;
+		constraints.gridx=1;
+		add(can,constraints);
+		pack();
+		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
+		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
+		setVisible(true);
+		can.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				LoginWindow p2= new LoginWindow();
+				Registro.this.dispose();
+			}
+		});
+		conf.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+
+				try {
+					Login cn = new Login();
+					cn.MySQLConnection("root", "", "comandas");
+					cn.Register(name1.getText(), email1.getText(), pwd1.getText(), direc1.getText(), tarjeta1.getText());
+					Cliente client = cn.getClient(name1.getText());
+					Pedidos pedido = new Pedidos(client,cn);
+					Registro.this.dispose();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+			}
+		});
+	}
+}
