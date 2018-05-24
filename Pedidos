@@ -7,6 +7,8 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
 import java.util.ArrayList;
 import java.util.regex.PatternSyntaxException;
 
@@ -17,6 +19,9 @@ import javax.swing.JButton;
 import javax.swing.JComboBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JMenu;
+import javax.swing.JMenuBar;
+import javax.swing.JMenuItem;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
@@ -47,6 +52,9 @@ public class Pedidos extends JFrame{
 	ButtonGroup bg;
 	Cliente client;
 	ArrayList datosPedido = new ArrayList();
+	JMenu menu;
+	JMenuItem disconnect;
+	JMenuBar bar;
 	
 	public Pedidos(Cliente client, Login log) throws Exception{
 		this.client = client;
@@ -149,16 +157,27 @@ public class Pedidos extends JFrame{
 		        	float precio = (float) table.getModel().getValueAt(table.getSelectedRow(), 4);
 		        	int cantidad = Integer.valueOf((String) table.getModel().getValueAt(table.getSelectedRow(), 5));
 		        	float total = precio*cantidad;
+		        	boolean sem = false;
 		        	
 		        	if(cantidad > 0){
 			        	if(stock-cantidad >= 0){
-			        		num += total;
-			        		tot = "Total pedido: "+num+" euros.";
-			        		totalText.setText(tot);
-			        		//Object[] orderRow = {
-				        	tablemodel.setValueAt(stock-cantidad, table.getSelectedRow(), 3);
-				    		Object[] rowData = {codigo,nombre,pais,precio,cantidad,total};
-				    		tablemodel2.addRow(rowData);
+		        			for(int j=0;j<table2.getModel().getRowCount();j++) {
+		        				if ((int) table2.getModel().getValueAt(j, 0) == (int) table.getModel().getValueAt(table.getSelectedRow(), 0)){
+		        					tablemodel2.setValueAt((int)table2.getModel().getValueAt(j, 4)+cantidad, j, 4); 
+		        					tablemodel2.setValueAt((int)table2.getModel().getValueAt(j, 4)*precio, j, 5);
+		        					tablemodel.setValueAt(stock-cantidad, table.getSelectedRow(), 3); //SET NEW STOCK
+		        					num += total;
+		        					totalText.setText("Total pedido: "+num+" euros.");
+		        					sem = true;
+		        				}
+		        			}
+		        			if(sem == false) {
+			        			num += total;
+				        		totalText.setText("Total pedido: "+num+" euros.");
+					        	tablemodel.setValueAt(stock-cantidad, table.getSelectedRow(), 3); //SET NEW STOCK
+					    		Object[] rowData = {codigo,nombre,pais,precio,cantidad,total};
+					    		tablemodel2.addRow(rowData); //ADD ROW AL PANEL INFERIOR
+		        			}
 			        	}else{
 			        		JOptionPane.showMessageDialog(getContentPane(), "No puedes superar el stock");
 			        	}
@@ -207,9 +226,9 @@ public class Pedidos extends JFrame{
 		
 		aceptar = new JButton("Hacer Pedido");
 		aceptar.addActionListener(new ActionListener() {
-			
 			@Override
 			public void actionPerformed(ActionEvent arg0) {
+				datosPedido = new ArrayList();
 				for(int e=0;e<table2.getRowCount();e++){
 					Object[] rowData = new Object[table2.getColumnCount()];
 					for (int i = 0; i < table2.getColumnCount(); i++) {
@@ -245,6 +264,33 @@ public class Pedidos extends JFrame{
 		constraints.gridheight = 2;
 		pedido.add(spane,constraints);
 		pedido.setBorder(BorderFactory.createTitledBorder(this.client.getNombre()));
+		
+		
+		/*CREAMOS LA BARRA DE MENÚ
+		 * AÑADIMOS UN ELEMENTO QUE SIRVA PARA DESCONECTARNOS DE LA BASE DE DATOS
+		 * SI PULSAMOS DESCONECTAR NOS VOLVERÁ A LA VENTANA DE LOGIN
+		 */
+		bar = new JMenuBar();
+		menu = new JMenu("File");
+		disconnect = new JMenuItem("Desconectar");
+		disconnect.addActionListener(new ActionListener() {
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				try {
+					log.closeConnection();
+					LoginWindow login = new LoginWindow();
+					Pedidos.this.dispose();
+				} catch (Exception e1) {
+					// TODO Auto-generated catch block
+					e1.printStackTrace();
+				}
+				
+			}
+		});
+		menu.add(disconnect);
+		bar.add(menu);
+		this.setJMenuBar(bar);
+		
 	}
 
 	/* CREAMOS EL FILTRO PARA LA TABLA
@@ -309,13 +355,29 @@ public class Pedidos extends JFrame{
 		panel2.add(spane2,constraints);
 	}
 	
+	/* MÉTODO QUE INCLUIRÁ LOS DATOS DE LA TABLA INFERIOR
+	 * SE USARÁ CADA VEZ QUE SE CAMBIE DE CLASE Y SE VUELVA A ÉSTA
+	 * LOS DATOS ESTÁN GUARDADOS EN LA LISTA datosPedido
+	 */ 
 	public void addData(ArrayList datosPedido,float num) {
 		this.datosPedido = datosPedido;
+		this.num = num;
 		for(int i=0;i<datosPedido.size();i++){
 			Object[] data = {((Object[])datosPedido.get(i))[0],((Object[])datosPedido.get(i))[1],((Object[])datosPedido.get(i))[2],((Object[])datosPedido.get(i))[3],((Object[])datosPedido.get(i))[4],((Object[])datosPedido.get(i))[5]};
 			tablemodel2.addRow(data);
 			totalText.setText("Total pedido: "+num+" euros.");
 		}
+		
+		//INICIALIZAMOS EL VALOR DE STOCK DE LA TABLA SUPERIOR CON LOS DATOS DE LA LISTA
+		for(int i=0;i<table.getModel().getRowCount();i++) {
+			for(int e=0;e<table2.getModel().getRowCount();e++) {
+				if ((int) table2.getModel().getValueAt(e, 0) == (int) table.getModel().getValueAt(i, 0)){
+					tablemodel.setValueAt((int) table.getModel().getValueAt(i, 3)-(int) table2.getModel().getValueAt(e, 4), i, 3);
+				}
+			}
+		}
+		
+		this.datosPedido = null;
 	}
 	
 	//PANEL QUE ENGLOBA TODOS LOS ELEMENTOS DE LA VENTANA
