@@ -1,4 +1,3 @@
-
 import java.awt.Dimension;
 import java.awt.GridBagConstraints;
 import java.awt.GridBagLayout;
@@ -6,105 +5,130 @@ import java.awt.Insets;
 import java.awt.Toolkit;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
+import java.awt.event.ItemListener;
+import java.awt.event.KeyAdapter;
+import java.awt.event.KeyEvent;
 
 import javax.swing.JButton;
+import javax.swing.JCheckBox;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
-import javax.swing.JOptionPane;
-import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-public class LoginWindow extends JFrame{
+public class LoginWindow extends JFrame {
+	JLabel log1,pwd1;
+	JButton log,reg;
+	JTextField logtxt;
+	JPasswordField pwdtxt;
+	JCheckBox ck1;
+	Login c1;
+	
+	public LoginWindow() {
+		GridBagConstraints constraints = new GridBagConstraints();
+		this.setLayout(new GridBagLayout());
+		log1 = new JLabel("Usuario");
+		constraints.gridy=0;
+		constraints.gridx=0;
+		constraints.insets= new Insets(15, 0, 0, 15);
+		add(log1,constraints);
+		logtxt = new JTextField(20);
+		constraints.gridy=0;
+		constraints.gridx=1;	
+		add(logtxt,constraints);
+		pwd1 = new JLabel("Password");
+		constraints.gridy=1;
+		constraints.gridx=0;
+		add(pwd1,constraints);
+		pwdtxt = new JPasswordField(20);
+		pwdtxt.addKeyListener(new KeyAdapter() {
 
-	private static final long serialVersionUID = 1L;
-	JPanel loginpanel;
-	JLabel usertext,passtext;
-	JButton aceptarlogin;
-	Login log;
-	JTextField user;
-	JPasswordField pass;
-	GridBagLayout bag;
-	GridBagConstraints constraints;
-	String usuario;
-	boolean control;
-	Cliente client;
-	
-	public LoginWindow() throws Exception{
-		log = new Login();
-		log.MySQLConnection("root", "", "comandas");
-		loginWindow();
-	}
-	
-	public void loginWindow(){
-		bag = new GridBagLayout();
-		constraints = new GridBagConstraints();
-		
-		loginpanel = new JPanel();
-		
-		loginpanel.setLayout(bag);
-		constraints.insets = new Insets(20, 20, 20, 20);
-		
-		usertext = new JLabel("Usuario: ");
-		constraints.gridx = 0;
-		constraints.gridy = 0;
-		loginpanel.add(usertext,constraints);
-		
-		user = new JTextField(15);
-		constraints.gridx = 1;
-		constraints.gridy = 0;
-		loginpanel.add(user,constraints);
-		constraints.insets = new Insets(0, 20, 20, 20);
-		passtext = new JLabel("Password: ");
-		constraints.gridx = 0;
-		constraints.gridy = 1;
-		loginpanel.add(passtext,constraints);
-		
-		pass = new JPasswordField(15);
-		constraints.gridx = 1;
-		constraints.gridy = 1;
-		loginpanel.add(pass,constraints);
-		
-		aceptarlogin = new JButton("Login");
-		aceptarlogin.addActionListener(new ActionListener() {
-			@SuppressWarnings("deprecation")
 			@Override
-			public void actionPerformed(ActionEvent e) {
-				if(log.logIn("clientes", user.getText(), pass.getText())){
-					usuario = Character.toUpperCase(user.getText().charAt(0)) + user.getText().substring(1,user.getText().length()).toLowerCase();
+			public void keyPressed(KeyEvent e) {
+				// TODO Auto-generated method stub
+				if(e.getKeyCode() == 10) {
 					try {
-						client = log.getValues("clientes");
-						Pedidos pedidos = new Pedidos(client,log);
+						c1 = new Login();
+						c1.MySQLConnection("root", "", "comandas");
+						Cliente client = c1.getClient(logtxt.getText());
+						Pedidos pedido = new Pedidos(client,c1);
+						LoginWindow.this.dispose();
 					} catch (Exception e1) {
+						// TODO Auto-generated catch block
 						e1.printStackTrace();
 					}
-					LoginWindow.this.dispose();
-				}else{
-					JOptionPane.showMessageDialog(aceptarlogin, "Usuario o password introducido no existe");
+				}
+				
+			}
+		});
+		constraints.gridy=1;
+		constraints.gridx=1;
+		add(pwdtxt,constraints);
+		log = new JButton("Iniciar Session");
+		constraints.gridy=2;
+		constraints.gridx=0;
+		constraints.insets= new Insets(15, 30, 15, 15);
+		add(log,constraints);
+		reg = new JButton("Registrar");
+		constraints.gridy=2;
+		constraints.gridx=1;
+		constraints.insets= new Insets(15, 5, 15, 15);
+		add(reg,constraints);
+		ck1= new JCheckBox();
+		constraints.gridy=1;
+		constraints.gridx=2;
+		constraints.insets= new Insets(15, 0, 0, 15);
+		add(ck1,constraints);
+	
+		ck1.addItemListener(new ItemListener() {
+			@Override
+			public void itemStateChanged(ItemEvent i) {
+				// TODO Auto-generated method stub
+				if(i.getStateChange()==1) {
+					pwdtxt.setEchoChar((char)0);
+				}else {
+					pwdtxt.setEchoChar('•');
 				}
 			}
 		});
-		
-		constraints.gridx = 0;
-		constraints.gridy = 2;
-		constraints.gridwidth = 2;
-		loginpanel.add(aceptarlogin, constraints);
-		this.add(loginpanel);
-		windowConstructor();
-	}
-	
-	public void windowConstructor(){
-		this.setSize(400,270);	
-		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+			
+		//
+		log.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				// TODO Auto-generated method stub
+					c1 = new Login();
+					try {
+						c1.MySQLConnection("root", "", "comandas");
+						if(c1.logIn(logtxt.getText(), pwdtxt.getText())) {
+							Cliente client = c1.getClient(logtxt.getText());
+							Pedidos pedido = new Pedidos(client,c1);
+							LoginWindow.this.dispose();
+						}else {
+							System.out.println("Error");
+						}
+					} catch (Exception e1) {
+						// TODO Auto-generated catch block
+						e1.printStackTrace();
+					}
+			}
+		});
+		reg.addActionListener(new ActionListener() {
+			
+			@Override
+			public void actionPerformed(ActionEvent e) {
+				Registro p2=new Registro();
+				LoginWindow.this.dispose();
+				
+			}
+		});
+		pack();
 		Dimension dim = Toolkit.getDefaultToolkit().getScreenSize();
-		this.setLocation(dim.width/2-this.getSize().width/2,dim.height/2-this.getSize().height/2);
+		this.setLocation(dim.width/2-this.getSize().width/2, dim.height/2-this.getSize().height/2);
 		this.setResizable(false);
-		this.setVisible(true);
+		this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		setVisible(true);
 	}
-	
-	public static void main(String[] args) throws Exception {
-		new LoginWindow();
-
-	}
-
 }
